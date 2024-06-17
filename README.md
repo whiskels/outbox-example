@@ -5,7 +5,7 @@
 [![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Fwhiskels%2Foutbox-example&count_bg=%233DC8C1&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false)](https://hits.seeyoufarm.com)
 
 This repository showcases an example of a simple outbox pattern implementation using Spring Boot and Kafka.
-[https://microservices.io/patterns/data/transactional-outbox.html](See: microservices.io - Transactional Outbox)
+[See: microservices.io - Transactional Outbox](https://microservices.io/patterns/data/transactional-outbox.html)
 
 ## Problem statement
 
@@ -39,9 +39,15 @@ Application consists of a multi-module Gradle project with two services:
     - starts on port 8079
     - consumes orders from Kafka and logs the result
 
+```bash
+docker-compose up
+./gradlew :order-service:bootRun
+./gradlew :logistics-service:bootRun
+```
+
 ### Anomaly simulation
 
-To simulate an anomaly our testing setup would be:
+To simulate an anomaly our testing setup would be a simple service we will be persisting a new entry in the database and also sending a message to Kafka.
 
 ```java
 
@@ -73,14 +79,14 @@ class OrderService {
 }
 ```
 
-In a simple service we will be persisting a new entry in the database and also sending a message to Kafka.
-
 ### Failed Commit anomaly
 
 To simulate the failed commit anomaly the above code is modified to throw an exception after the message is sent to
 Kafka.
+
 This would lead to a situation where the message is sent to Kafka, but the transaction is rolled back and the data is
 not persisted in the database.
+
 As the result, we can observe consumption of the message in the logistics-service, but the entry is not present in the
 database of order-service
 
@@ -88,22 +94,26 @@ database of order-service
 
 To simulate the failed broker delivery anomaly the above code is modified to throw an exception in the KafkaTemplate
 call.
+
 Since KafkaTemplate provides an instance of CompletableFuture transaction is not rolled back and the data is persisted
 in the database, but no event is sent.
+
 As the result, we can observe entry in the database of the order-service (and receive a response from the
 order-service), but the message is not consumed by the logistics-service
 
 ## Outbox
 
 Outbox pattern is used to resolve the anomalies mentioned above.
+
 With this approach - we persist the event in the database in the same transaction as the data was persisted.
 Then a separate scheduler is used to process the events.
-This approach allows us to achieve at-least-once delivery semantics.
-If memory was sent successfully, but database failed to be updated - event will be resent.
+
+This approach allows us to achieve _at-least-once_ delivery semantics.
+If memory was sent successfully, but database failed to be updated - event will be retried on the next tick of the scheduler.
 
 Pros:
 
-- We still use non-blocking way of sending messages
+- We still leverage non-blocking way of sending messages
 - In case of failure we can retry sending the message
 
 Cons:
