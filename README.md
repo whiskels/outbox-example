@@ -1,4 +1,7 @@
 # Simple Outbox example
+![CI](https://github.com/whiskels/outbox-example/actions/workflows/ci.yml/badge.svg)
+[![codecov](https://codecov.io/gh/whiskels/outbox-example/graph/badge.svg?token=F51GAFZ63Q)](https://codecov.io/gh/whiskels/outbox-example)
+
 This repository showcases an example of a simple outbox pattern implementation using Spring Boot and Kafka.
 
 ## Problem statement
