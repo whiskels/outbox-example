@@ -2,6 +2,7 @@
 
 ![CI](https://github.com/whiskels/outbox-example/actions/workflows/ci.yml/badge.svg)
 [![codecov](https://codecov.io/gh/whiskels/outbox-example/graph/badge.svg?token=F51GAFZ63Q)](https://codecov.io/gh/whiskels/outbox-example)
+[![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Fwhiskels%2Foutbox-example&count_bg=%233DC8C1&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false)](https://hits.seeyoufarm.com)
 
 This repository showcases an example of a simple outbox pattern implementation using Spring Boot and Kafka.
 [https://microservices.io/patterns/data/transactional-outbox.html](See: microservices.io - Transactional Outbox)
@@ -25,32 +26,18 @@ Java 21, Docker, Kafka, Postgres
 Application consists of a multi-module Gradle project with two services:
 
 - order-service - responsible for taking orders and sending events to Kafka
+    - starts on port 8078
+    - exposes endpoint POST /orders to create an order
+      -  Endpoint accepts an optional argument simulationStrategy:
+        - OUTBOX (default)
+        - FAILED_COMMIT_ANOMALY
+        - FAILED_BROKER_DELIVERY
+    - provides Swagger-UI on http://localhost:8078/swagger-ui/index.html#/
+    - uses Postgres to store order data
+    - produces orders to Kafka
 - logistics-service - consumes events and starts order processing
-
-Order-service exposes one endpoint:
-
-```
-curl -X 'POST' \
-  'http://localhost:8078/orders' \
-  -H 'accept: */*' \
-  -H 'Content-Type: application/json' \
-  -d '{
-  "userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-  "items": [
-    {
-      "productId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-      "quantity": 0
-    }
-  ]
-```
-
-And also provides a Swagger-UI on http://localhost:8078/swagger-ui/index.html#/
-
-This endpoint accepts an optional argument simulationStrategy:
-
-- OUTBOX (default)
-- FAILED_COMMIT_ANOMALY
-- FAILED_BROKER_DELIVERY
+    - starts on port 8079
+    - consumes orders from Kafka and logs the result
 
 ### Anomaly simulation
 
@@ -132,21 +119,29 @@ Some messaging systems support transactions natively. For example, Kafka provide
 publish messages as part of a database transaction.
 
 Pros:
+
 - Simplifies the architecture by using Kafka's own transaction capabilities
 
 Cons:
+
 - Tightly couples your application logic with Kafka's transactional API.
 - Longer response times due to the nature of the Kafka's producer (batching, retries, linger period, acks etc.)
 
 ### Database triggers
-Using database triggers to publish events after the transaction commits. This approach is closely tied to the capabilities of your database.
+
+Using database triggers to publish events after the transaction commits. This approach is closely tied to the
+capabilities of your database.
 Pros:
+
 - Ensures consistency and utilizes database features.
 
 Cons:
+
 - Depends on database-specific features and can be complex to manage.
 
 ## Out of scope
+
 - Provision of partition keys to ensure message ordering inside partitions
-- Retry of "stuck" messages - in current implementation there is a slight possibility of a some sort of a eadlock if some messages are
+- Retry of "stuck" messages - in current implementation there is a slight possibility of a some sort of a eadlock if
+  some messages are
   stuck in the outbox table
