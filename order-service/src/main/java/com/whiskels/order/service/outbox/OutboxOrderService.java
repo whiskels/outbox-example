@@ -8,7 +8,6 @@ import com.whiskels.order.entity.OutboxEvent;
 import com.whiskels.order.mapper.OrderMapper;
 import com.whiskels.order.service.SimulatedOrderService;
 import com.whiskels.order.util.JsonUtil;
-import jakarta.persistence.OptimisticLockException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.repository.CrudRepository;

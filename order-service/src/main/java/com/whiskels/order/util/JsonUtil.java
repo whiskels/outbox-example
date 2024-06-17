@@ -6,7 +6,7 @@ import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class JsonUtil {
-    public static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     @SneakyThrows
     public static String toJson(Object obj) {

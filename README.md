@@ -27,11 +27,10 @@ Application consists of a multi-module Gradle project with two services:
 
 - order-service - responsible for taking orders and sending events to Kafka
     - starts on port 8078
-    - exposes endpoint POST /orders to create an order
-      -  Endpoint accepts an optional argument simulationStrategy:
-        - OUTBOX (default)
-        - FAILED_COMMIT_ANOMALY
-        - FAILED_BROKER_DELIVERY
+    - exposes endpoint POST /orders to create an order. Endpoint accepts an optional argument simulationStrategy:
+      - OUTBOX (default)
+      - FAILED_COMMIT_ANOMALY
+      - FAILED_BROKER_DELIVERY
     - provides Swagger-UI on http://localhost:8078/swagger-ui/index.html#/
     - uses Postgres to store order data
     - produces orders to Kafka
@@ -93,7 +92,7 @@ database of order-service
 ### Failed Broker Delivery anomaly
 
 To simulate the failed broker delivery anomaly the above code is modified to throw an exception in the KafkaTemplate
-call.
+call. Transactional is also removed from the service, so it commits before message is sent.
 
 Since KafkaTemplate provides an instance of CompletableFuture transaction is not rolled back and the data is persisted
 in the database, but no event is sent.
