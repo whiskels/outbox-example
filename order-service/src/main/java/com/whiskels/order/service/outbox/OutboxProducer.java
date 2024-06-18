@@ -23,11 +23,11 @@ class OutboxProducer {
         var events = outboxEventRepository.findNotSentBatch();
         events.forEach(event -> kafkaTemplate.send(event.getTopic(), event.getEvent()).whenComplete(
                 (result, ex) -> {
-                    if (result != null) {
+                    if (result != null && ex == null) {
                         event.setSent(LocalDateTime.now());
                         log.info("Sent event {} to topic {} at {}", event.getId(), event.getTopic(),  event.getSent());
                         outboxEventRepository.save(event);
-                    } else if (ex != null) {
+                    } else {
                         log.error("Failed to send event {}:", event.getId(), ex);
                     }
                 }

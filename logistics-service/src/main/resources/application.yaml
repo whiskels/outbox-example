@@ -1,5 +1,3 @@
 spring:
   application:
     name: logistics-service
-server:
-  port: 8079
