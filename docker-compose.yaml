@@ -30,15 +30,6 @@ services:
       - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
     ports:
       - 9092:9092
-  kafka_manager:
-    image: kafkamanager/kafka-manager
-    container_name: kafka-manager
-    restart: always
-    ports:
-      - "8000:8000"
-    environment:
-      ZK_HOSTS: "zookeeper:2181"
-      APPLICATION_SECRET: "random-secret"
 volumes:
   kafka-volume:
   zookeeper-volume:
