@@ -1,7 +1,7 @@
 package com.whiskels.order.service.anomaly.database;
 
 import com.whiskels.order.TestConsumer;
-import com.whiskels.order.TestcontaintersIT;
+import com.whiskels.order.TestcontainersIT;
 import com.whiskels.order.dto.OrderDto;
 import com.whiskels.order.entity.Order;
 import jakarta.persistence.OptimisticLockException;
@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
-class FailedDatabaseOrderServiceTest extends TestcontaintersIT {
+class FailedDatabaseOrderServiceTest extends TestcontainersIT {
 
     @Autowired
     private CrudRepository<Order, UUID> orderRepository;

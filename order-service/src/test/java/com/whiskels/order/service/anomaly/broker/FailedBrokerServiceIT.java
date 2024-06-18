@@ -1,7 +1,7 @@
 package com.whiskels.order.service.anomaly.broker;
 
 import com.whiskels.order.TestConsumer;
-import com.whiskels.order.TestcontaintersIT;
+import com.whiskels.order.TestcontainersIT;
 import com.whiskels.order.dto.OrderDto;
 import com.whiskels.order.entity.Order;
 import org.junit.jupiter.api.Test;
@@ -14,7 +14,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
-public class FailedBrokerServiceIT extends TestcontaintersIT {
+public class FailedBrokerServiceIT extends TestcontainersIT {
 
     @Autowired
     private CrudRepository<Order, UUID> orderRepository;

@@ -1,7 +1,7 @@
 package com.whiskels.order.service.outbox;
 
 import com.whiskels.order.TestConsumer;
-import com.whiskels.order.TestcontaintersIT;
+import com.whiskels.order.TestcontainersIT;
 import com.whiskels.order.entity.OutboxEvent;
 import com.whiskels.order.repository.OutboxEventRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
-class OutboxProducerIT extends TestcontaintersIT {
+class OutboxProducerIT extends TestcontainersIT {
 
     @Autowired
     private OutboxEventRepository outboxEventRepository;

@@ -17,8 +17,8 @@ import org.testcontainers.utility.DockerImageName;
 @ActiveProfiles("testcontainers")
 @Testcontainers
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-@Import(TestcontaintersIT.TestListenerConfig.class)
-public abstract class TestcontaintersIT {
+@Import(TestcontainersIT.TestListenerConfig.class)
+public abstract class TestcontainersIT {
     @Value("${producer.topic}")
     protected String topicName;
 
