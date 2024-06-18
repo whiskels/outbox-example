@@ -10,6 +10,6 @@ import java.util.UUID;
 
 @Repository
 public interface OutboxEventRepository extends CrudRepository<OutboxEvent, UUID> {
-    @Query("from OutboxEvent where sent is null order by created asc")
-    List<OutboxEvent> findAllNotSent();
+    @Query("from OutboxEvent where sent is null order by created asc limit 10")
+    List<OutboxEvent> findNotSentBatch();
 }

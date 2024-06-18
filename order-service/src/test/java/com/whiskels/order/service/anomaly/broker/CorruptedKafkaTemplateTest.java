@@ -48,7 +48,7 @@ public class CorruptedKafkaTemplateTest {
 
     @Test
     public void testReceiveWithTopicPartitionOffset() {
-        String topic = "test-topic";
+        String topic = "orders";
         int partition = 0;
         long offset = 0L;
         ConsumerRecord<String, String> record = new ConsumerRecord<>(topic, partition, offset, "key", "value");

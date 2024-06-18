@@ -35,7 +35,6 @@ Application consists of a multi-module Gradle project with two services:
     - uses Postgres to store order data
     - produces orders to Kafka
 - logistics-service - consumes events and starts order processing
-    - starts on port 8079
     - consumes orders from Kafka and logs the result
 
 ```bash
