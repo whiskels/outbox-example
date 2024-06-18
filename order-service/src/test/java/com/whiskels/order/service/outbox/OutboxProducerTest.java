@@ -52,7 +52,7 @@ class OutboxProducerTest {
     static Stream<Arguments> testSend_FailureShouldNotUpdate() {
         return Stream.of(
                 Arguments.of(CompletableFuture.failedFuture(new RuntimeException())),
-                Arguments.of(CompletableFuture.completedFuture(new SendResult<>(null, null)))
+                Arguments.of(CompletableFuture.completedFuture(null))
         );
     }
 
