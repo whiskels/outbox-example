@@ -37,9 +37,8 @@ class OutboxOrderService implements SimulatedOrderService {
     @Override
     @Transactional
     public OrderCreatedDto create(final OrderDto order) {
-        var orderEntity = orderMapper.toEntity(order);
+        var orderEntity = orderRepository.save(orderMapper.toEntity(order));
         log.info("Saved order from user {} with id {}", order.getUserId(), orderEntity.getId());
-        orderEntity = orderRepository.save(orderEntity);
         var dto = orderMapper.toDto(orderEntity);
         var outboxEvent = outbox.save(OutboxEvent.of(topic, JsonUtil.toJson(dto)));
         log.info("Saved order with id {} to outbox {}", dto.getId(), outboxEvent.getId());

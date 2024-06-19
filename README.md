@@ -103,29 +103,40 @@ curl -X 'POST' \
 ### Order Service Code Example
 
 ```java
-@Service
-@RequiredArgsConstructor
 @Slf4j
-class OrderService {
+public abstract class AbstractOrderService implements SimulatedOrderService {
     private final OrderMapper orderMapper;
     private final CrudRepository<Order, UUID> orderRepository;
     private final KafkaTemplate<String, String> kafkaTemplate;
+    private final String topic;
 
+    public AbstractOrderService(final OrderMapper orderMapper,
+                                final CrudRepository<Order, UUID> orderRepository,
+                                final KafkaTemplate<String, String> kafkaTemplate,
+                                final String topic) {
+        this.orderMapper = orderMapper;
+        this.orderRepository = orderRepository;
+        this.kafkaTemplate = kafkaTemplate;
+        this.topic = topic;
+    }
+
+    @Override
     @Transactional
     public OrderCreatedDto create(final OrderDto order) {
-        var orderEntity = orderMapper.toEntity(order);
+        var orderEntity = orderRepository.save(orderMapper.toEntity(order));
         log.info("Saved order from user {} with id {}", order.getUserId(), orderEntity.getId());
-        orderEntity = orderRepository.save(orderEntity);
         var dto = orderMapper.toDto(orderEntity);
         log.info("Preparing to send order with id to kafka {}", orderEntity.getId());
-        kafkaTemplate.send("orders", JsonUtil.toJson(dto))
-                .whenComplete((result, ex) -> {
-                    if (result != null && ex == null) {
-                        log.info("Sent order with id {} to kafka", dto.getId());
-                    } else {
-                        log.error("Failed to send order with id {} to kafka", dto.getId(), ex);
-                    }
-                });
+        kafkaTemplate.send(topic, JsonUtil.toJson(dto))
+                .whenComplete(
+                        (result, ex) -> {
+                            if (result != null && ex == null) {
+                                log.info("Sent order with id {} to kafka", dto.getId());
+                            } else {
+                                log.error("Failed to send order with id {} to kafka", dto.getId(), ex);
+                            }
+                        });
+        return dto;
     }
 }
 ```
@@ -136,7 +147,7 @@ To simulate the failed commit anomaly, the code is modified to throw an exceptio
 
 ### Failed Broker Delivery Anomaly
 
-To simulate the failed broker delivery anomaly a `CorruptedKafkaTemplate` is added, that will throw an exception in the KafkaTemplate call. The data is persisted in the database, but no event is sent. The order-service database will have the entry, but the message will not be consumed by the logistics-service.
+To simulate the failed broker delivery anomaly a `CorruptedKafkaTemplate` is created, that will throw an exception in the KafkaTemplate call. The data is persisted in the database, but no event is sent. The order-service database will have the entry, but the message will not be consumed by the logistics-service.
 > This example also demonstrates an often misunderstood concept of the `KafkaTemplate` - since `send()` is asynchronous and returns a `ListenableFuture`, the exception is not thrown immediately, but rather when the future is completed. This means that the exception is not caught by the `@Transactional` method and the transaction is committed.
 
 
