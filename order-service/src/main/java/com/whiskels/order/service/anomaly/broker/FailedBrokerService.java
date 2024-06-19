@@ -7,6 +7,7 @@ import com.whiskels.order.entity.Order;
 import com.whiskels.order.mapper.OrderMapper;
 import com.whiskels.order.service.SimulatedOrderService;
 import com.whiskels.order.util.JsonUtil;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.repository.CrudRepository;
@@ -33,6 +34,7 @@ class FailedBrokerService implements SimulatedOrderService {
     }
 
     @Override
+    @Transactional
     public OrderCreatedDto create(final OrderDto order) {
         var orderEntity = orderMapper.toEntity(order);
         log.info("Saved order from user {} with id {}", order.getUserId(), orderEntity.getId());

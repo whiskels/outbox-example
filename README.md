@@ -1,54 +1,108 @@
-# Simple Outbox example
+# Simple Outbox Pattern Implementation with Spring Boot and Kafka
 
 ![CI](https://github.com/whiskels/outbox-example/actions/workflows/ci.yml/badge.svg)
 [![codecov](https://codecov.io/gh/whiskels/outbox-example/graph/badge.svg?token=F51GAFZ63Q)](https://codecov.io/gh/whiskels/outbox-example)
 [![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Fwhiskels%2Foutbox-example&count_bg=%233DC8C1&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false)](https://hits.seeyoufarm.com)
 
-This repository showcases an example of a simple outbox pattern implementation using Spring Boot and Kafka.
-[See: microservices.io - Transactional Outbox](https://microservices.io/patterns/data/transactional-outbox.html)
 
-## Problem statement
+This repository showcases an example of a simple outbox pattern implementation using Spring Boot and Kafka. For more information on the outbox pattern, see: [microservices.io - Transactional Outbox](https://microservices.io/patterns/data/transactional-outbox.html).
 
-Most use cases for applications that implement event-driven architecture involve persistence of some data and then
-sending messages to a message broker like Kafka or RabbitMQ.
+## Table of Contents
 
-We want both things to happen, but with naive implementations we might face some issues:
+- [Problem Statement](#problem-statement)
+- [Setup](#setup)
+    - [Prerequisites](#prerequisites)
+    - [Project Structure](#project-structure)
+    - [Running the Application](#running-the-application)
+- [Anomaly Simulation](#anomaly-simulation)
+    - [Order Service Code Example](#order-service-code-example)
+    - [Failed Commit Anomaly](#failed-commit-anomaly)
+    - [Failed Broker Delivery Anomaly](#failed-broker-delivery-anomaly)
+- [Outbox Pattern](#outbox-pattern)
+    - [Pros](#pros)
+    - [Cons](#cons)
+- [Other Approaches](#other-approaches)
+    - [Integrated Transactional Messaging](#integrated-transactional-messaging)
+    - [Database Triggers](#database-triggers)
+- [Out of Scope](#out-of-scope)
 
-- if we send event while transaction is still open - we might lose the data in the database if the transaction fails
-- if we send event outside of transaction - we might lose the event if the sending fails
+## Problem Statement
 
-This repository aims to demonstrate both consistency anomalies and how to solve them using the outbox pattern.
+In event-driven architecture, applications often need to persist data and send messages to a message broker like Kafka or RabbitMQ. However, naive implementations may encounter the following issues:
+
+- **Sending event while transaction is open**: Data might be lost if the transaction fails.
+- **Sending event outside of transaction**: Event might be lost if sending fails.
+
+This repository demonstrates these consistency anomalies and provides a solution using the outbox pattern.
 
 ## Setup
 
-Java 21, Docker, Kafka, Postgres
+### Prerequisites
 
-Application consists of a multi-module Gradle project with two services:
+- Java 21
+- Docker
+- Kafka
+- Postgres
 
-- order-service - responsible for taking orders and sending events to Kafka
-    - starts on port 8078
-    - exposes endpoint POST /orders to create an order. Endpoint accepts an optional argument simulationStrategy:
-      - OUTBOX (default)
-      - FAILED_COMMIT_ANOMALY
-      - FAILED_BROKER_DELIVERY
-    - provides Swagger-UI on http://localhost:8078/swagger-ui/index.html#/
-    - uses Postgres to store order data
-    - produces orders to Kafka
-- logistics-service - consumes events and starts order processing
-    - consumes orders from Kafka and logs the result
+### Project Structure
 
-```bash
-docker-compose up
-./gradlew :order-service:bootRun
-./gradlew :logistics-service:bootRun
+This application consists of a multi-module Gradle project with two services:
+
+#### Order Service
+
+- **Responsibilities**: Taking orders and sending events to Kafka.
+- **Port**: 8078
+- **Endpoint**: `POST /orders`
+    - Optional argument: `simulationStrategy`
+        - OUTBOX (default)
+        - FAILED_COMMIT_ANOMALY
+        - FAILED_BROKER_DELIVERY
+- **Swagger UI**: [http://localhost:8078/swagger-ui/index.html](http://localhost:8078/swagger-ui/index.html)
+- **Database**: Postgres (stores order data)
+- **Kafka**: Produces orders to Kafka
+
+#### Logistics Service
+
+- **Responsibilities**: Consumes events and processes orders.
+- **Kafka**: Consumes orders and logs the result.
+
+### Running the Application
+
+1. **Start Docker Services**: Ensure Docker is running and execute `docker-compose up` to start Kafka and Postgres services.
+2. **Run Order Service**:
+   ```sh
+   ./gradlew :order-service:bootRun
+   ```
+3. **Run Logistics Service**:
+   ```sh
+   ./gradlew :logistics-service:bootRun
+   ```
+
+### Example Request
+
+To create an order, use the following example:
+
+```sh
+curl -X 'POST' \
+  'http://localhost:8078/orders?simulationStrategy=OUTBOX' \
+  -H 'accept: */*' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "items": [
+    {
+      "productId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "quantity": 1
+    }
+  ]
+}'
 ```
 
-### Anomaly simulation
+## Anomaly Simulation
 
-To simulate an anomaly our testing setup would be a simple service we will be persisting a new entry in the database and also sending a message to Kafka.
+### Order Service Code Example
 
 ```java
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -57,7 +111,7 @@ class OrderService {
     private final CrudRepository<Order, UUID> orderRepository;
     private final KafkaTemplate<String, String> kafkaTemplate;
 
-    @Transactionl
+    @Transactional
     public OrderCreatedDto create(final OrderDto order) {
         var orderEntity = orderMapper.toEntity(order);
         log.info("Saved order from user {} with id {}", order.getUserId(), orderEntity.getId());
@@ -65,91 +119,81 @@ class OrderService {
         var dto = orderMapper.toDto(orderEntity);
         log.info("Preparing to send order with id to kafka {}", orderEntity.getId());
         kafkaTemplate.send("orders", JsonUtil.toJson(dto))
-                .whenComplete(
-                        (result, ex) -> {
-                            if (ex != null) {
-                                log.error("Failed to send order with id {} to kafka", dto.getId(), ex);
-                            } else if (result != null) {
-                                log.info("Sent order with id {} to kafka", dto.getId());
-                            }
-                        });
+                .whenComplete((result, ex) -> {
+                    if (result != null && ex == null) {
+                        log.info("Sent order with id {} to kafka", dto.getId());
+                    } else {
+                        log.error("Failed to send order with id {} to kafka", dto.getId(), ex);
+                    }
+                });
     }
 }
 ```
 
-### Failed Commit anomaly
+### Failed Commit Anomaly
 
-To simulate the failed commit anomaly the above code is modified to throw an exception after the message is sent to
-Kafka.
+To simulate the failed commit anomaly, the code is modified to throw an exception after the message is sent to Kafka - `FailedDatabaseOrderService`. This results in the message being sent to Kafka, but the transaction is rolled back, so the data is not persisted in the database. The logistics-service will consume the message, but the entry will not be present in the order-service database.
 
-This would lead to a situation where the message is sent to Kafka, but the transaction is rolled back and the data is
-not persisted in the database.
+### Failed Broker Delivery Anomaly
 
-As the result, we can observe consumption of the message in the logistics-service, but the entry is not present in the
-database of order-service
+To simulate the failed broker delivery anomaly a `CorruptedKafkaTemplate` is added, that will throw an exception in the KafkaTemplate call. The data is persisted in the database, but no event is sent. The order-service database will have the entry, but the message will not be consumed by the logistics-service.
+> This example also demonstrates an often misunderstood concept of the `KafkaTemplate` - since `send()` is asynchronous and returns a `ListenableFuture`, the exception is not thrown immediately, but rather when the future is completed. This means that the exception is not caught by the `@Transactional` method and the transaction is committed.
 
-### Failed Broker Delivery anomaly
 
-To simulate the failed broker delivery anomaly the above code is modified to throw an exception in the KafkaTemplate
-call. Transactional is also removed from the service, so it commits before message is sent.
 
-Since KafkaTemplate provides an instance of CompletableFuture transaction is not rolled back and the data is persisted
-in the database, but no event is sent.
+> **_Naive attempt to resolve by awaiting future completion:_**  
+> 
+> Before implementing the outbox pattern, a naive attempt can be made to resolve the consistency issues by awaiting the completion of the future returned by the `KafkaTemplate.send` method. 
+> This approach involves blocking the transaction until the Kafka broker confirms the message delivery. While this ensures that the transaction would only commit if the message was successfully sent, it introduces significant latency and blocking behavior into the system. Additionally, this approach does not fully address the issue of failed commits.
 
-As the result, we can observe entry in the database of the order-service (and receive a response from the
-order-service), but the message is not consumed by the logistics-service
 
-## Outbox
 
-Outbox pattern is used to resolve the anomalies mentioned above.
+## Outbox Pattern
 
-With this approach - we persist the event in the database in the same transaction as the data was persisted.
-Then a separate scheduler is used to process the events.
+The outbox pattern resolves the anomalies mentioned above by persisting the event in the database within the same transaction as the data. A separate scheduler then processes the events, ensuring at-least-once delivery semantics.
+> **_Why does the outbox pattern only guarantee the at-least-once delivery?_**
+> 
+> The outbox pattern does not provide exactly-once delivery semantics because the message delivery is not transactional. If the message is sent but the scheduler fails before marking the message as processed, the message will be sent again.
 
-This approach allows us to achieve _at-least-once_ delivery semantics.
-If memory was sent successfully, but database failed to be updated - event will be retried on the next tick of the scheduler.
+### Pros
 
-Pros:
+- Non-blocking message sending
+- Retry mechanism in case of failure
 
-- We still leverage non-blocking way of sending messages
-- In case of failure we can retry sending the message
+### Cons
 
-Cons:
+- Additional implementation overhead
+- Increased message delivery latency
 
-- Additional overhead on implementation of the outbox
-- Additional latency to message delivery
-
-## Other approaches
+## Other Approaches
 
 ### Integrated Transactional Messaging
 
-Some messaging systems support transactions natively. For example, Kafka provides transactional APIs that can be used to
-publish messages as part of a database transaction.
+Some messaging systems, like Kafka, support transactions natively.
 
-Pros:
+**Pros**:
 
-- Simplifies the architecture by using Kafka's own transaction capabilities
+- Simplifies architecture by using Kafka's transactional capabilities
 
-Cons:
+**Cons**:
 
-- Tightly couples your application logic with Kafka's transactional API.
-- Longer response times due to the nature of the Kafka's producer (batching, retries, linger period, acks etc.)
+- Tightly couples application logic with Kafka's transactional API
+- Longer response times due to Kafka's producer characteristics
 
-### Database triggers
+### Database Triggers
 
-Using database triggers to publish events after the transaction commits. This approach is closely tied to the
-capabilities of your database.
-Pros:
+Using database triggers to publish events after the transaction commits.
 
-- Ensures consistency and utilizes database features.
+**Pros**:
 
-Cons:
+- Ensures consistency using database features
 
-- Depends on database-specific features and can be complex to manage.
+**Cons**:
 
-## Out of scope
+- Depends on database-specific features
+- Can be complex to manage
 
-- Provision of partition keys to ensure message ordering inside partitions
-- Retry of "stuck" messages - in current implementation there is a slight possibility of a some sort of a eadlock if
-  some messages are
-  stuck in the outbox table
+## Out of Scope
+
+- Provision of partition keys to ensure message ordering within partitions
+- Retry of "stuck" messages, which may cause deadlocks in the outbox table
