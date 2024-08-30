@@ -103,22 +103,13 @@ curl -X 'POST' \
 ### Order Service Code Example
 
 ```java
+@RequiredArgsConstructor
 @Slf4j
 public abstract class AbstractOrderService implements SimulatedOrderService {
     private final OrderMapper orderMapper;
     private final CrudRepository<Order, UUID> orderRepository;
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final String topic;
-
-    public AbstractOrderService(final OrderMapper orderMapper,
-                                final CrudRepository<Order, UUID> orderRepository,
-                                final KafkaTemplate<String, String> kafkaTemplate,
-                                final String topic) {
-        this.orderMapper = orderMapper;
-        this.orderRepository = orderRepository;
-        this.kafkaTemplate = kafkaTemplate;
-        this.topic = topic;
-    }
 
     @Override
     @Transactional
@@ -139,6 +130,7 @@ public abstract class AbstractOrderService implements SimulatedOrderService {
         return dto;
     }
 }
+
 ```
 
 ### Failed Commit Anomaly

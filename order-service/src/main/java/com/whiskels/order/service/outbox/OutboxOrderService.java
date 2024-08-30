@@ -21,16 +21,16 @@ import java.util.UUID;
 class OutboxOrderService implements SimulatedOrderService {
     private final OrderMapper orderMapper;
     private final CrudRepository<Order, UUID> orderRepository;
-    private final CrudRepository<OutboxEvent, UUID> outbox;
+    private final CrudRepository<OutboxEvent, UUID> outboxRepository;
     private final String topic;
 
     public OutboxOrderService(final OrderMapper orderMapper,
                               final CrudRepository<Order, UUID> orderRepository,
-                              final CrudRepository<OutboxEvent, UUID> outbox,
+                              final CrudRepository<OutboxEvent, UUID> outboxRepository,
                               @Value("${producer.topic}") final String topic) {
         this.orderMapper = orderMapper;
         this.orderRepository = orderRepository;
-        this.outbox = outbox;
+        this.outboxRepository = outboxRepository;
         this.topic = topic;
     }
 
@@ -40,7 +40,7 @@ class OutboxOrderService implements SimulatedOrderService {
         var orderEntity = orderRepository.save(orderMapper.toEntity(order));
         log.info("Saved order from user {} with id {}", order.getUserId(), orderEntity.getId());
         var dto = orderMapper.toDto(orderEntity);
-        var outboxEvent = outbox.save(OutboxEvent.of(topic, JsonUtil.toJson(dto)));
+        var outboxEvent = outboxRepository.save(OutboxEvent.of(topic, JsonUtil.toJson(dto)));
         log.info("Saved order with id {} to outbox {}", dto.getId(), outboxEvent.getId());
         return dto;
     }

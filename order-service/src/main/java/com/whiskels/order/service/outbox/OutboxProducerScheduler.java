@@ -12,7 +12,7 @@ class OutboxProducerScheduler {
     private final OutboxProducer producer;
 
     @Scheduled(fixedRate = 1000)
-    public void sendScheduled() {
+    void sendScheduled() {
         producer.send();
     }
 }
