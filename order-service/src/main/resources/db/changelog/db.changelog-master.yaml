@@ -1,7 +1,7 @@
 databaseChangeLog:
   - changeSet:
       id: 1
-      author: your_name
+      author: whiskels
       changes:
         - sql:
             splitStatements: false
@@ -9,7 +9,7 @@ databaseChangeLog:
             sql: CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
   - changeSet:
       id: 2
-      author: your_name
+      author: whiskels
       changes:
         - createTable:
             tableName: orders
@@ -26,10 +26,16 @@ databaseChangeLog:
                   type: UUID
                   constraints:
                     nullable: false
+              - column:
+                  name: created
+                  type: timestamp
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
 
   - changeSet:
       id: 3
-      author: your_name
+      author: whiskels
       changes:
         - createTable:
             tableName: order_items
@@ -66,7 +72,7 @@ databaseChangeLog:
 
   - changeSet:
       id: 4
-      author: your_name
+      author: whiskels
       changes:
         - createTable:
             tableName: outbox
@@ -80,7 +86,7 @@ databaseChangeLog:
                     nullable: false
               - column:
                   name: topic
-                  type: varchar(255)
+                  type: text
                   constraints:
                     nullable: false
               - column:

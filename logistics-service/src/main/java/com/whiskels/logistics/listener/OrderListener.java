@@ -10,9 +10,12 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @RequiredArgsConstructor
 class OrderListener {
-    @KafkaListener(id = "logistics", topics = "orders", clientIdPrefix = "logistics-service")
-    public void listen(String data) {
-        log.info("Received new order event: " + data);
+    private final OrderRepository orderRepository;
+
+    @KafkaListener(topics = "orders")
+    public void listen(Order order) {
+        log.info("Received new order event: " + order);
+        orderRepository.save(order);
         log.info("Preparing delivery options for the client");
     }
 

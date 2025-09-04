@@ -2,7 +2,7 @@ spring:
   application:
     name: order-service
   datasource:
-    url: jdbc:postgresql://localhost:5432/order-service
+    url: jdbc:postgresql://localhost:5432/postgres
     username: order-service
     password: secret
     driver-class-name: org.postgresql.Driver
@@ -13,6 +13,13 @@ spring:
   sql.init.mode: never
   kafka:
     bootstrap-servers: localhost:9092
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      client-id: ${spring.application.name}
+    template:
+      observation-enabled: true
 producer:
   topic: orders
 server:

@@ -1,3 +1,12 @@
+buildscript {
+    ext {
+        javaVersion = 21
+        loki4jVersion = '1.6.0'
+        mapStructVersion = '1.5.5.Final'
+        springDocVersion = '2.5.0'
+    }
+}
+
 plugins {
     id 'java'
     id 'org.springframework.boot' version '3.3.0'
@@ -10,7 +19,7 @@ version = '0.0.1-SNAPSHOT'
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(javaVersion)
     }
 }
 
@@ -25,23 +34,28 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.liquibase:liquibase-core'
-    implementation 'org.mapstruct:mapstruct:1.5.5.Final'
-    implementation 'org.springframework.kafka:spring-kafka'
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0'
-    compileOnly 'org.projectlombok:lombok'
-    runtimeOnly 'org.postgresql:postgresql'
-    annotationProcessor 'org.projectlombok:lombok'
-    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
-    testImplementation 'org.springframework.kafka:spring-kafka-test'
-    testImplementation 'org.testcontainers:junit-jupiter'
-    testImplementation 'org.testcontainers:kafka'
-    testImplementation 'org.testcontainers:postgresql'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    implementation "org.springframework.boot:spring-boot-starter-web",
+            "org.springframework.boot:spring-boot-starter-actuator",
+            "org.springframework.boot:spring-boot-starter-data-jpa",
+            "com.github.loki4j:loki-logback-appender:${loki4jVersion}",
+            "io.micrometer:micrometer-registry-prometheus",
+            "io.micrometer:micrometer-tracing-bridge-otel",
+            "io.opentelemetry:opentelemetry-exporter-otlp",
+            "org.liquibase:liquibase-core",
+            "org.mapstruct:mapstruct:${mapStructVersion}",
+            "org.springframework.kafka:spring-kafka",
+            "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springDocVersion}"
+    compileOnly "org.projectlombok:lombok"
+    runtimeOnly "org.postgresql:postgresql"
+    annotationProcessor "org.projectlombok:lombok",
+            "org.mapstruct:mapstruct-processor:${mapStructVersion}"
+    testImplementation "org.springframework.boot:spring-boot-starter-test",
+            "org.springframework.boot:spring-boot-testcontainers",
+            "org.springframework.kafka:spring-kafka-test",
+            "org.testcontainers:junit-jupiter",
+            "org.testcontainers:kafka",
+            "org.testcontainers:postgresql"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
 }
 
 tasks.named('test') {
@@ -56,3 +70,9 @@ jacocoTestReport {
 }
 
 check.dependsOn jacocoTestReport
+
+bootJar {
+    archiveBaseName.set("order-service")
+    archiveFileName.set("order-service.jar")
+    archiveVersion.set("")
+}

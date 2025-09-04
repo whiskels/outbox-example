@@ -1,19 +1,21 @@
 package com.whiskels.order;
 
-import org.apache.kafka.clients.consumer.ConsumerRecord;
+import com.whiskels.order.api.dto.CreateOrderResponse;
 import org.springframework.kafka.annotation.KafkaListener;
 
-import java.util.concurrent.CountDownLatch;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 
 public class TestConsumer {
-    private final CountDownLatch latch = new CountDownLatch(1);
+    private final Set<UUID> usersWithExisingOrders = new HashSet<>();
+
     @KafkaListener(topics = "${producer.topic}")
-    public void listen(ConsumerRecord<?, ?> consumerRecord) {
-        latch.countDown();
+    public void listen(CreateOrderResponse orderEvent) {
+        usersWithExisingOrders.add(orderEvent.getUserId());
     }
 
-
-    public boolean messageConsumed() {
-        return latch.getCount() == 0;
+    public boolean hasMessageForUser(UUID userId) {
+        return usersWithExisingOrders.contains(userId);
     }
 }
