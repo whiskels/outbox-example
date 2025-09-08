@@ -37,24 +37,24 @@ This repository demonstrates these consistency anomalies and provides a solution
 
 ### Components
 
-| Component         | Port | Description                                        |
-|-------------------|------|----------------------------------------------------|
-| order-service     | 8078 | Simulates order creation, produces events          |
-| logistics-service | 8079 | Consumes order events                              |
-| order-simulator   |      | Simulates order creation                           |
-| Postgres          | 5432 | Relational database for services                   |
-| Kafka             | 9092 | Message broker for event streaming                 |
-| Conduktor         | 80   | Management UI for Kafka cluster                    |
-| Prometheus        | 9090 | Metrics collection and monitoring                  |
-| Loki              | 3100 | Centralized log aggregation                        |
-| Tempo             | 3200 | Distributed tracing backend                        |
-| Grafana           | 3000 | Visualization dashboards for metrics, logs, traces |
+| Component             | Port | Description                                                                                                                                                                                                     |
+|-----------------------|------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **order-service**     | 8078 | Simulates order creation, produces events                                                                                                                                                                       |
+| **logistics-service** | 8079 | Consumes order events                                                                                                                                                                                           |
+| **order-simulator**   |      | K6 load testing function to simulate order creation                                                                                                                                                             |
+| **Postgres**          | 5432 | Relational database for services                                                                                                                                                                                |
+| **Kafka**             | 9092 | Message broker for event streaming                                                                                                                                                                              |
+| **Conduktor**         | 80   | Management UI for Kafka cluster                                                                                                                                                                                 |
+| **Prometheus**        | 9090 | Metrics collection and monitoring                                                                                                                                                                               |
+| **Loki**              | 3100 | Centralized log aggregation                                                                                                                                                                                     |
+| **Tempo**             | 3200 | Distributed tracing backend                                                                                                                                                                                     |
+| **Grafana**           | 3000 | Visualization dashboards for metrics, logs, traces. <br/>**Dashboards**:<br/>- JVM statistics<br/>- Kafka client/producer-side metrics<br/>- Log overview<br/>- Cross-service order consistency (business)<br/> |
 
 ### Key Features
 
 - Transactional Outbox Pattern: Guarantees at-least-once delivery of events, preventing data inconsistencies.
 - Anomaly Simulation: The ability to simulate common failure modes (e.g., database commit failure, broker delivery
-failure) to demonstrate the effectiveness of the outbox pattern.
+  failure) to demonstrate the effectiveness of the outbox pattern.
 - Observability: Integrated metrics, tracing, and logging to provide insights into the system's behavior.
 
 ### Running the application
@@ -196,6 +196,7 @@ transaction as the data. A separate scheduler then processes the events, ensurin
 - Increased message delivery latency
 
 ### Outcome
+
 ![random_strategy_dashboard.png](screenshots/random_strategy_dashboard.png)
 
 Using random strategy we can see that almost 10% of orders are lost in either of the services.
