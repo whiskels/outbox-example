@@ -4,12 +4,19 @@
 [![codecov](https://codecov.io/gh/whiskels/outbox-example/graph/badge.svg?token=F51GAFZ63Q)](https://codecov.io/gh/whiskels/outbox-example)
 [![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Fwhiskels%2Foutbox-example&count_bg=%233DC8C1&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false)](https://hits.seeyoufarm.com)
 
-Demo project to illustrate the usage of
+Demo project to illustrate the benefits of using
 the [microservices.io - Transactional Outbox](https://microservices.io/patterns/data/transactional-outbox.html) pattern.
+
+In event-driven architecture, applications often need to persist data and send messages to a message broker like Kafka
+or RabbitMQ. However, naive implementations may encounter the following issues:
+
+- **Sending event while transaction is open**: Data might be lost if the transaction fails.
+- **Sending event outside of transaction**: Event might be lost if sending fails.
+
+This repository demonstrates these consistency anomalies and provides a solution using the outbox pattern.
 
 ## Table of Contents
 
-- [Problem Statement](#problem-statement)
 - [Setup](#setup)
     - [Prerequisites](#prerequisites)
     - [Project Structure](#project-structure)
@@ -26,39 +33,45 @@ the [microservices.io - Transactional Outbox](https://microservices.io/patterns/
     - [Database Triggers](#database-triggers)
 - [Out of Scope](#out-of-scope)
 
-## Problem Statement
-
-In event-driven architecture, applications often need to persist data and send messages to a message broker like Kafka
-or RabbitMQ. However, naive implementations may encounter the following issues:
-
-- **Sending event while transaction is open**: Data might be lost if the transaction fails.
-- **Sending event outside of transaction**: Event might be lost if sending fails.
-
-This repository demonstrates these consistency anomalies and provides a solution using the outbox pattern.
-
 ## Setup
 
 ### Components
 
-| Component         | Address              | Description                                        |
-|-------------------|----------------------|----------------------------------------------------|
-| order-service     | localhost:8078       | Simulates order creation, produces events          |
-| logistics-service | localhost:8079       | Consumes order events                              |
-| Postgres          | localhost:5432       | Relational database for services                   |
-| Kafka             | localhost:9092       | Message broker for event streaming                 |
-| Conduktor console | localhost:80/console | Management UI for Kafka cluster                    |
-| Prometheus        | localhost:9090       | Metrics collection and monitoring                  |
-| Loki              | localhost:3100       | Centralized log aggregation                        |
-| Tempo             | localhost:3200       | Distributed tracing backend                        |
-| Grafana           | localhost:3000       | Visualization dashboards for metrics, logs, traces |
+| Component         | Port | Description                                        |
+|-------------------|------|----------------------------------------------------|
+| order-service     | 8078 | Simulates order creation, produces events          |
+| logistics-service | 8079 | Consumes order events                              |
+| Postgres          | 5432 | Relational database for services                   |
+| Kafka             | 9092 | Message broker for event streaming                 |
+| Conduktor         | 80   | Management UI for Kafka cluster                    |
+| Prometheus        | 9090 | Metrics collection and monitoring                  |
+| Loki              | 3100 | Centralized log aggregation                        |
+| Tempo             | 3200 | Distributed tracing backend                        |
+| Grafana           | 3000 | Visualization dashboards for metrics, logs, traces |
+| Order simulator   |      | Simulates order creation                           |
 
-### Prerequisites
+### Key Features
 
-Run containers
-`docker-compose up`
+- Transactional Outbox Pattern: Guarantees at-least-once delivery of events, preventing data inconsistencies.
+- Anomaly Simulation: The ability to simulate common failure modes (e.g., database commit failure, broker delivery
+failure) to demonstrate the effectiveness of the outbox pattern.
+- Observability: Integrated metrics, tracing, and logging to provide insights into the system's behavior.
 
-### Variables
-Stored in the '.env' file
+### Running the application
+
+Build java containers and run compose:
+`docker-compose up --build`
+
+SIMULATION_STRATEGY environment variable can be set to one of the following values:
+
+- `NONE` - naive send-and-forget approach
+- `FAILED_COMMIT_ANOMALY` - simulates a failure after sending the message to Kafka but before committing the transaction
+- `FAILED_BROKER_ANOMALY` - simulates a failure during message sending to Kafka
+- `OUTBOX` - message production via outbox pattern
+- `null` - random strategy will be chosen (weights: 90% NONE, 5% FAILED_COMMIT_ANOMALY, 5% FAILED_BROKER_ANOMALY)
+
+Example:
+`SIMULATION_STRATEGY=OUTBOX docker-compose up --build`
 
 ### Project Structure
 
@@ -67,33 +80,13 @@ This application consists of a multi-module Gradle project with two services:
 #### Order Service
 
 - **Responsibilities**: Taking orders and sending events to Kafka.
-- **Port**: 8078
 - **Endpoint**: `POST /orders`
-    - Optional argument: `simulationStrategy`
-        - OUTBOX (default)
+    - Optional header: `X-Simulation-Strategy` with possible values:
+        - OUTBOX
         - FAILED_COMMIT_ANOMALY
         - FAILED_BROKER_DELIVERY
+        - NONE
 - **Swagger UI**: [http://localhost:8078/swagger-ui/index.html](http://localhost:8078/swagger-ui/index.html)
-- **Database**: Postgres (stores order data)
-- **Kafka**: Produces orders to Kafka
-
-#### Logistics Service
-
-- **Responsibilities**: Consumes events and processes orders.
-- **Kafka**: Consumes orders and logs the result.
-
-### Running the Application
-
-1. **Start Docker Services**: Ensure Docker is running and execute `docker-compose up` to start Kafka and Postgres
-   services.
-2. **Run Order Service**:
-   ```sh
-   ./gradlew :order-service:bootRun
-   ```
-3. **Run Logistics Service**:
-   ```sh
-   ./gradlew :logistics-service:bootRun
-   ```
 
 ### Example Request
 
@@ -101,9 +94,10 @@ To create an order, use the following example:
 
 ```sh
 curl -X 'POST' \
-  'http://localhost:8078/orders?simulationStrategy=OUTBOX' \
+  'http://localhost:8078/orders' \
   -H 'accept: */*' \
   -H 'Content-Type: application/json' \
+  -H 'X-Simulation-Strategy: OUTBOX' \
   -d '{
   "userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
   "items": [
@@ -115,7 +109,11 @@ curl -X 'POST' \
 }'
 ```
 
-## Anomaly Simulation
+#### Logistics Service
+
+- **Responsibilities**: Consumes events and processes orders.
+
+## Anomaly Simulation mechanism
 
 ### Order Service Code Example
 
@@ -153,21 +151,20 @@ public abstract class AbstractOrderService implements SimulatedOrderService {
 
 ### Failed Commit Anomaly
 
-To simulate the failed commit anomaly, the code is modified to throw an exception after the message is sent to Kafka -
-`FailedDatabaseOrderService`. This results in the message being sent to Kafka, but the transaction is rolled back, so
-the data is not persisted in the database. The logistics-service will consume the message, but the entry will not be
+To simulate the failed commit anomaly, the exception is thrown inside transaction after the message is sent to Kafka.
+
+This results in the message being sent to Kafka, but the transaction being rolled back, so the data is not persisted in
+the database. The logistics-service will consume the message, but the entry will not be
 present in the order-service database.
 
 ### Failed Broker Delivery Anomaly
 
-To simulate the failed broker delivery anomaly a `CorruptedKafkaTemplate` is created, that will throw an exception in
-the KafkaTemplate call. The data is persisted in the database, but no event is sent. The order-service database will
+To simulate the failed broker delivery anomaly KafkaTemplate is modified to throw an exception in
+the `send()` call. The data is persisted in the database, but no event is sent. The order-service database will
 have the entry, but the message will not be consumed by the logistics-service.
 > This example also demonstrates an often misunderstood concept of the `KafkaTemplate` - since `send()` is asynchronous
 > and returns a `ListenableFuture`, the exception is not thrown immediately, but rather when the future is completed.
-> This
-> means that the exception is not caught by the `@Transactional` method and the transaction is committed.
-
+> This means that the exception is not caught by the `@Transactional` method and the transaction is committed.
 
 
 > **_Naive attempt to resolve by awaiting future completion:_**
@@ -228,5 +225,8 @@ Using database triggers to publish events after the transaction commits.
 
 ## Out of Scope
 
-- Provision of partition keys to ensure message ordering within partitions
+- Message order preservation
 - Retry of "stuck" messages, which may cause deadlocks in the outbox table
+- Concurrent outbox processing
+- Locking mechanism
+- Idempotency on producer for exactly-once semantics

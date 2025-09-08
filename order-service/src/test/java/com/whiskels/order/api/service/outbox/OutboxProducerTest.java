@@ -39,14 +39,13 @@ class OutboxProducerTest {
         given(outboxEventRepository.findNotSentBatch()).willReturn(List.of(new OutboxEvent()));
         given(kafkaTemplate.send(any(), any())).willReturn(failedFuture);
 
-        outboxProducer.send();
         try {
-            failedFuture.get();
+            outboxProducer.send();
         } catch (Exception e) {
             // ignore
         }
 
-        verify(outboxEventRepository, never()).save(any());
+        verify(outboxEventRepository, never()).markSent(any(), any());
     }
 
     static Stream<Arguments> shouldNotUpdateWhenSendFailed() {
@@ -62,13 +61,12 @@ class OutboxProducerTest {
         CompletableFuture<SendResult<String, String>> failedFuture = CompletableFuture.completedFuture(new SendResult<>(null, null));
         given(kafkaTemplate.send(any(), any())).willReturn(failedFuture);
 
-        outboxProducer.send();
         try {
-            failedFuture.get();
+            outboxProducer.send();
         } catch (Exception e) {
             // ignore
         }
 
-        verify(outboxEventRepository).save(any());
+        verify(outboxEventRepository).markSent(any(), any());
     }
 }
