@@ -41,6 +41,7 @@ This repository demonstrates these consistency anomalies and provides a solution
 |-------------------|------|----------------------------------------------------|
 | order-service     | 8078 | Simulates order creation, produces events          |
 | logistics-service | 8079 | Consumes order events                              |
+| order-simulator   |      | Simulates order creation                           |
 | Postgres          | 5432 | Relational database for services                   |
 | Kafka             | 9092 | Message broker for event streaming                 |
 | Conduktor         | 80   | Management UI for Kafka cluster                    |
@@ -48,7 +49,6 @@ This repository demonstrates these consistency anomalies and provides a solution
 | Loki              | 3100 | Centralized log aggregation                        |
 | Tempo             | 3200 | Distributed tracing backend                        |
 | Grafana           | 3000 | Visualization dashboards for metrics, logs, traces |
-| Order simulator   |      | Simulates order creation                           |
 
 ### Key Features
 
@@ -113,7 +113,7 @@ curl -X 'POST' \
 
 - **Responsibilities**: Consumes events and processes orders.
 
-## Anomaly Simulation mechanism
+## Anomaly Simulation
 
 ### Order Service Code Example
 
@@ -194,6 +194,15 @@ transaction as the data. A separate scheduler then processes the events, ensurin
 
 - Additional implementation overhead
 - Increased message delivery latency
+
+### Outcome
+![random_strategy_dashboard.png](screenshots/random_strategy_dashboard.png)
+
+Using random strategy we can see that almost 10% of orders are lost in either of the services.
+
+![outbox_strategy_dashboard.png](screenshots/outbox_strategy_dashboard.png)
+
+With outbox we see that both services have the same orders.
 
 ## Other Approaches
 

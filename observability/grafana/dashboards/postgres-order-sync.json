@@ -18,7 +18,7 @@
     "editable": true,
     "fiscalYearStartMonth": 0,
     "graphTooltip": 0,
-    "id": 2,
+    "id": 6,
     "links": [],
     "panels": [
         {
@@ -208,7 +208,7 @@
             },
             "gridPos": {
                 "h": 5,
-                "w": 10,
+                "w": 5,
                 "x": 14,
                 "y": 0
             },
@@ -262,6 +262,87 @@
                 }
             ],
             "title": "Number of orders only in order-service",
+            "type": "stat"
+        },
+        {
+            "datasource": {
+                "type": "grafana-postgresql-datasource",
+                "uid": "P1809F7CD0C75ACF4"
+            },
+            "fieldConfig": {
+                "defaults": {
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "absolute",
+                        "steps": [
+                            {
+                                "color": "green"
+                            },
+                            {
+                                "color": "red",
+                                "value": 1
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 5,
+                "w": 5,
+                "x": 19,
+                "y": 0
+            },
+            "id": 5,
+            "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "/.*/",
+                    "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+            },
+            "pluginVersion": "11.6.1",
+            "targets": [
+                {
+                    "datasource": {
+                        "type": "postgres",
+                        "uid": "P1809F7CD0C75ACF4"
+                    },
+                    "editorMode": "code",
+                    "format": "table",
+                    "rawQuery": true,
+                    "rawSql": "SELECT COUNT(*) AS value\nFROM \"logistics_service\".orders l\nLEFT JOIN \"order_service\".orders o\n  ON o.id = l.id\nWHERE o.id IS NULL;",
+                    "refId": "A",
+                    "sql": {
+                        "columns": [
+                            {
+                                "parameters": [],
+                                "type": "function"
+                            }
+                        ],
+                        "groupBy": [
+                            {
+                                "property": {
+                                    "type": "string"
+                                },
+                                "type": "groupBy"
+                            }
+                        ],
+                        "limit": 50
+                    }
+                }
+            ],
+            "title": "Number of orders only in logistics-service",
             "type": "stat"
         },
         {
@@ -497,6 +578,42 @@
             },
             "fieldConfig": {
                 "defaults": {
+                    "color": {
+                        "mode": "palette-classic"
+                    },
+                    "custom": {
+                        "axisBorderShow": false,
+                        "axisCenteredZero": false,
+                        "axisColorMode": "text",
+                        "axisLabel": "",
+                        "axisPlacement": "auto",
+                        "barAlignment": 0,
+                        "barWidthFactor": 0.6,
+                        "drawStyle": "line",
+                        "fillOpacity": 0,
+                        "gradientMode": "none",
+                        "hideFrom": {
+                            "legend": false,
+                            "tooltip": false,
+                            "viz": false
+                        },
+                        "insertNulls": false,
+                        "lineInterpolation": "linear",
+                        "lineWidth": 1,
+                        "pointSize": 5,
+                        "scaleDistribution": {
+                            "type": "linear"
+                        },
+                        "showPoints": "auto",
+                        "spanNulls": false,
+                        "stacking": {
+                            "group": "A",
+                            "mode": "none"
+                        },
+                        "thresholdsStyle": {
+                            "mode": "off"
+                        }
+                    },
                     "mappings": [],
                     "thresholds": {
                         "mode": "absolute",
@@ -506,7 +623,7 @@
                             },
                             {
                                 "color": "red",
-                                "value": 1
+                                "value": 80
                             }
                         ]
                     }
@@ -514,40 +631,36 @@
                 "overrides": []
             },
             "gridPos": {
-                "h": 5,
+                "h": 10,
                 "w": 10,
                 "x": 14,
                 "y": 5
             },
-            "id": 5,
+            "id": 11,
             "options": {
-                "colorMode": "value",
-                "graphMode": "area",
-                "justifyMode": "auto",
-                "orientation": "auto",
-                "percentChangeColorMode": "standard",
-                "reduceOptions": {
-                    "calcs": [
-                        "lastNotNull"
-                    ],
-                    "fields": "/.*/",
-                    "values": false
+                "legend": {
+                    "calcs": [],
+                    "displayMode": "list",
+                    "placement": "bottom",
+                    "showLegend": true
                 },
-                "showPercentChange": false,
-                "textMode": "auto",
-                "wideLayout": true
+                "tooltip": {
+                    "hideZeros": false,
+                    "mode": "single",
+                    "sort": "none"
+                }
             },
             "pluginVersion": "11.6.1",
             "targets": [
                 {
                     "datasource": {
-                        "type": "postgres",
+                        "type": "grafana-postgresql-datasource",
                         "uid": "P1809F7CD0C75ACF4"
                     },
                     "editorMode": "code",
                     "format": "table",
                     "rawQuery": true,
-                    "rawSql": "SELECT COUNT(*) AS value\nFROM \"logistics_service\".orders l\nLEFT JOIN \"order_service\".orders o\n  ON o.id = l.id\nWHERE o.id IS NULL;",
+                    "rawSql": "SELECT\n  date_trunc('${time_bucket}', l.created) AS time,\n  AVG(EXTRACT(EPOCH FROM (l.created - o.created)) * 1000) AS \"AVG Latency, ms\",\n  MIN(EXTRACT(EPOCH FROM (l.created - o.created)) * 1000) AS \"MIN Latency, ms\",\n  MAX(EXTRACT(EPOCH FROM (l.created - o.created)) * 1000) AS \"MAX Latency, ms\",\n  COUNT(*) AS \"Orders in sync\"\nFROM \"logistics_service\".orders l\nINNER JOIN \"order_service\".orders o\n  ON o.id = l.id\nWHERE l.created >= o.created\nGROUP BY time\nORDER BY time DESC",
                     "refId": "A",
                     "sql": {
                         "columns": [
@@ -568,8 +681,8 @@
                     }
                 }
             ],
-            "title": "Number of orders only in logistics-service",
-            "type": "stat"
+            "title": "Order synchronization latency (per ${time_bucket})",
+            "type": "timeseries"
         },
         {
             "datasource": {
@@ -796,89 +909,6 @@
             ],
             "title": "Orders existing only in logistics-service (per ${time_bucket})",
             "type": "timeseries"
-        },
-        {
-            "datasource": {
-                "type": "grafana-postgresql-datasource",
-                "uid": "P1809F7CD0C75ACF4"
-            },
-            "fieldConfig": {
-                "defaults": {
-                    "custom": {
-                        "align": "auto",
-                        "cellOptions": {
-                            "type": "auto"
-                        },
-                        "inspect": false
-                    },
-                    "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green"
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
-                            }
-                        ]
-                    }
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 5,
-                "w": 10,
-                "x": 14,
-                "y": 10
-            },
-            "id": 6,
-            "options": {
-                "cellHeight": "sm",
-                "footer": {
-                    "countRows": false,
-                    "fields": "",
-                    "reducer": [
-                        "sum"
-                    ],
-                    "show": false
-                },
-                "showHeader": true
-            },
-            "pluginVersion": "11.6.1",
-            "targets": [
-                {
-                    "datasource": {
-                        "type": "postgres",
-                        "uid": "P1809F7CD0C75ACF4"
-                    },
-                    "editorMode": "code",
-                    "format": "table",
-                    "rawQuery": true,
-                    "rawSql": "SELECT\n  'logistics service' as service_name,\n  count(*) as \"Number of mismatched orders\"\n FROM \"logistics_service\".orders l\nLEFT JOIN \"order_service\".orders o\n  ON o.id = l.id\nWHERE o.id IS NULL\nGROUP BY service_name\n\nUNION ALL\n\nSELECT\n  'order service' as service_name,\n  count(*) as \"Number of mismatched orders\"\n FROM \"order_service\".orders l\nLEFT JOIN \"logistics_service\".orders o\n  ON o.id = l.id\nWHERE o.id IS NULL\nGROUP BY service_name",
-                    "refId": "A",
-                    "sql": {
-                        "columns": [
-                            {
-                                "parameters": [],
-                                "type": "function"
-                            }
-                        ],
-                        "groupBy": [
-                            {
-                                "property": {
-                                    "type": "string"
-                                },
-                                "type": "groupBy"
-                            }
-                        ],
-                        "limit": 50
-                    }
-                }
-            ],
-            "title": "Missed orders",
-            "type": "table"
         }
     ],
     "preload": false,
