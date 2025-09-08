@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class JsonUtilTest {
 
     @Test
-    void testToJson() {
+    void shouldConvertToJson() {
         TestObject testObject = new TestObject();
         testObject.setId(1);
         testObject.setName("Test Name");
@@ -21,7 +21,7 @@ class JsonUtilTest {
     }
 
     @Test
-    void testToJsonWithException() {
+    void shouldThrowExceptionWhenToJsonFails() {
         assertThrows(InvalidDefinitionException.class, () -> JsonUtil.toJson(new Object()));
     }
 

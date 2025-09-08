@@ -13,7 +13,7 @@ jobs:
         java-version: '21'
         distribution: 'adopt'
     - name: Install dependencies, run tests, and collect coverage
-      run: gradle clean build
+      run: ./gradlew clean build
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
       with:

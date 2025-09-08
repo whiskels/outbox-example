@@ -1,3 +1,50 @@
 spring:
   application:
     name: logistics-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/postgres
+    username: logistics-service
+    password: secret
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+  sql.init.mode: never
+
+  kafka:
+    bootstrap-servers: localhost:9092
+
+    consumer:
+      group-id: logistics-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.use.type.headers: false
+        spring.json.value.default.type: com.whiskels.logistics.listener.Order
+    listener:
+      observation-enabled: true
+
+management:
+  tracing:
+    enabled: true
+  endpoints:
+    web:
+      exposure:
+        # Open up all Spring Boot Actuator endpoints for the demo, don't do this in production!
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+
+  metrics:
+    tags:
+      application: ${spring.application.name}
+      env: local
+  otlp:
+    tracing:
+      endpoint: http://localhost:4318/v1/spans
+
+server:
+  port: 8079

@@ -1,51 +1,43 @@
 package com.whiskels.order.config;
 
-import org.apache.kafka.clients.admin.AdminClientConfig;
-import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.common.serialization.StringSerializer;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
+import org.springframework.boot.context.properties.PropertyMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
-import org.springframework.kafka.core.DefaultKafkaProducerFactory;
-import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
+import org.springframework.kafka.support.ProducerListener;
+import org.springframework.kafka.support.converter.RecordMessageConverter;
 
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.Map;
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 class KafkaConfig {
 
-    @Value(value = "${spring.kafka.bootstrap-servers}")
-    private String bootstrapAddress;
-
     @Bean
-    KafkaAdmin kafkaAdmin() {
-        Map<String, Object> configs = new HashMap<>();
-        configs.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapAddress);
-        return new KafkaAdmin(configs);
+    KafkaTemplate<String, String> kafkaTemplate(
+            ProducerFactory<String, String> kafkaProducerFactory,
+            ProducerListener<Object, Object> kafkaProducerListener,
+            ObjectProvider<RecordMessageConverter> messageConverter,
+            KafkaProperties properties) {
+
+        return createKafkaTemplate(kafkaProducerFactory, kafkaProducerListener, messageConverter,
+                properties, Collections.emptyMap());
     }
 
-    @Bean
-    ProducerFactory<String, String> producerFactory() {
-        Map<String, Object> configProps = new HashMap<>();
-        configProps.put(
-                ProducerConfig.BOOTSTRAP_SERVERS_CONFIG,
-                bootstrapAddress);
-        configProps.put(
-                ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
-                StringSerializer.class);
-        configProps.put(
-                ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
-                StringSerializer.class);
-        return new DefaultKafkaProducerFactory<>(configProps);
-    }
-
-    @Bean
-    @Primary
-    KafkaTemplate<String, String> kafkaTemplate() {
-        return new KafkaTemplate<>(producerFactory());
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private <T> KafkaTemplate<String, T> createKafkaTemplate(ProducerFactory<String, T> kafkaProducerFactory,
+                                                             ProducerListener<Object, Object> kafkaProducerListener, ObjectProvider<RecordMessageConverter> messageConverter,
+                                                             KafkaProperties properties, Map<String, Object> configurationOverrides) {
+        PropertyMapper map = PropertyMapper.get().alwaysApplyingWhenNonNull();
+        KafkaTemplate<String, T> kafkaTemplate = new KafkaTemplate<>(kafkaProducerFactory, configurationOverrides);
+        messageConverter.ifUnique(kafkaTemplate::setMessageConverter);
+        map.from(kafkaProducerListener).to(((KafkaTemplate) kafkaTemplate)::setProducerListener);
+        map.from(properties.getTemplate().getDefaultTopic()).to(kafkaTemplate::setDefaultTopic);
+        map.from(properties.getTemplate().getTransactionIdPrefix()).to(kafkaTemplate::setTransactionIdPrefix);
+        map.from(properties.getTemplate().isObservationEnabled()).to(kafkaTemplate::setObservationEnabled);
+        return kafkaTemplate;
     }
 }
