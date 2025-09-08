@@ -28,7 +28,7 @@ class OrderControllerTest {
     private OrderService orderService;
 
     @Test
-    void testCreateOrder() throws Exception {
+    void shouldCreateOrder() throws Exception {
         CreateOrderResponse createOrderResponse = new CreateOrderResponse(UUID.randomUUID(), UUID.randomUUID());
 
         when(orderService.create(any(CreateOrderRequest.class))).thenReturn(createOrderResponse);

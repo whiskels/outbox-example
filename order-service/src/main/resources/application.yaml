@@ -18,6 +18,7 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
       client-id: ${spring.application.name}
+
     template:
       observation-enabled: true
 producer:

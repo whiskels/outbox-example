@@ -192,6 +192,7 @@ services:
     ports:
       - "${ORDER_SERVICE_PORT}:${ORDER_SERVICE_PORT}"
     environment:
+      - SPRING_PROFILES_ACTIVE=observability
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgresql:5432/postgres
       - SPRING_DATASOURCE_USERNAME=${ORDER_SERVICE_DB_USER}
       - SPRING_DATASOURCE_PASSWORD=${ORDER_SERVICE_DB_PASSWORD}
@@ -244,7 +245,7 @@ services:
       - TARGET_HOST=order-service:${ORDER_SERVICE_PORT}
       - VUS=${LOAD_TEST_VUS}
       - DURATION=${LOAD_TEST_DURATION}
-      - SIMULATION_STRATEGY=  ${SIMULATION_STRATEGY}
+      - SIMULATION_STRATEGY=${SIMULATION_STRATEGY}
 
 volumes:
   pg_data: { }

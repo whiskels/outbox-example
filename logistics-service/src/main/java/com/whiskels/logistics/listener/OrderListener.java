@@ -14,7 +14,7 @@ class OrderListener {
 
     @KafkaListener(topics = "orders")
     public void listen(Order order) {
-        log.info("Received new order event: " + order);
+        log.info("Received new order event: {}", order.getId());
         orderRepository.save(order);
         log.info("Preparing delivery options for the client");
     }

@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 class OutboxProducerScheduler {
     private final OutboxProducer producer;
 
-    @Scheduled(fixedRate = 1000)
+    @Scheduled(fixedRate = 100)
     void sendScheduled() {
         producer.send();
     }

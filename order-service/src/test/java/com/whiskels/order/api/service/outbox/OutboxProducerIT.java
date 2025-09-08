@@ -1,10 +1,8 @@
 package com.whiskels.order.api.service.outbox;
 
 import com.whiskels.order.BaseIT;
-import com.whiskels.order.TestConsumer;
 import com.whiskels.order.api.domain.OutboxEvent;
 import com.whiskels.order.api.dto.CreateOrderResponse;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -19,16 +17,8 @@ class OutboxProducerIT extends BaseIT {
     @Autowired
     private OutboxProducer outboxProducer;
 
-    @Autowired
-    private TestConsumer testConsumer;
-
-    @BeforeEach
-    void setUp() {
-        outboxEventRepository.deleteAll();
-    }
-
     @Test
-    void testSend_EventsFoundAndSentSuccessfully() throws Exception {
+    void shouldSuccessfullyFindAndSendEvents() throws Exception {
         var eventDto = new CreateOrderResponse(UUID.randomUUID(), UUID.randomUUID());
         OutboxEvent event = new OutboxEvent();
         event.setTopic(topicName);
@@ -44,7 +34,7 @@ class OutboxProducerIT extends BaseIT {
     }
 
     @Test
-    void testSend_NoEventsFound() {
+    void shouldNotSendAnythingWhenNoEventsFound() {
         outboxProducer.send();
 
         Iterable<OutboxEvent> events = outboxEventRepository.findAll();

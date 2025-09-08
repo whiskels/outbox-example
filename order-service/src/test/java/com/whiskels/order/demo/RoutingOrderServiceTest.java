@@ -76,13 +76,13 @@ class RoutingOrderServiceTest {
 
     @ParameterizedTest
     @EnumSource(value = SimulationStrategyEnum.class, mode = EnumSource.Mode.EXCLUDE, names = {"OUTBOX", "FAILED_COMMIT_ANOMALY"})
-    @DisplayName("Should use basic service and return response when strategy is {}}")
+    @DisplayName("Should use basic service and return response for other strategies")
     void shouldUseBasicServiceOnOtherStrategiesWithNoExceptions(SimulationStrategyEnum strategy) {
         // Given
         CreateOrderRequest request = mock(CreateOrderRequest.class);
         CreateOrderResponse expectedResponse = mock(CreateOrderResponse.class);
 
-        when(simulationStrategyProvider.get()).thenReturn(SimulationStrategyEnum.NONE);
+        when(simulationStrategyProvider.get()).thenReturn(strategy);
         when(basicOrderService.create(request)).thenReturn(expectedResponse);
 
         // When

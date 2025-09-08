@@ -4,7 +4,6 @@ import {uuidv4} from 'https://jslib.k6.io/k6-utils/1.4.0/index.js';
 export let options = {
     vus: __ENV.VUS || 2,
     duration: __ENV.DURATION || '5m',
-    simulationStrategy: __ENV.SIMULATION_STRATEGY || null,
 };
 
 export default function () {
@@ -37,5 +36,5 @@ export default function () {
         headers: headers,
     };
 
-    const response = http.post(`http://${__ENV.TARGET_HOST}/orders`, payload, params);
+    http.post(`http://${__ENV.TARGET_HOST}/orders`, payload, params);
 }

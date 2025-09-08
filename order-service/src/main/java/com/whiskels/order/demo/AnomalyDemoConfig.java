@@ -4,6 +4,8 @@ import com.whiskels.order.api.service.BasicOrderService;
 import com.whiskels.order.api.service.OrderService;
 import com.whiskels.order.api.service.outbox.OutboxOrderService;
 import io.swagger.v3.oas.models.media.StringSchema;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -40,7 +42,8 @@ class AnomalyDemoConfig {
     KafkaTemplate<String, String> flakyTemplate(KafkaTemplate<String, String> delegate, SimulationStrategyProvider simulationStrategyProvider) {
         return new KafkaTemplate<>(delegate.getProducerFactory()) {
             @Override
-            public CompletableFuture<SendResult<String, String>> send(String topic, String data) {
+            @Nonnull
+            public CompletableFuture<SendResult<String, String>> send(@Nonnull String topic, @Nullable String data) {
                 if (simulationStrategyProvider.get() == SimulationStrategyEnum.FAILED_BROKER_ANOMALY) {
                     return CompletableFuture.failedFuture(new DemoAnomalyException("Simulated flaky broker failure"));
                 }

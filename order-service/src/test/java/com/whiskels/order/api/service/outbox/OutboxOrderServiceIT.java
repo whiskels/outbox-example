@@ -17,7 +17,7 @@ class OutboxOrderServiceIT extends BaseIT {
     private OutboxOrderService outboxOrderService;
 
     @Test
-    void testCreate() {
+    void shouldCreateOrderAndOutboxEntry() {
         CreateOrderRequest order = new CreateOrderRequest(UUID.randomUUID(), List.of());
 
         // when

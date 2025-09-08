@@ -48,15 +48,16 @@ class SimulationStrategyProviderTest {
 
     @ParameterizedTest
     @MethodSource
-    @DisplayName("Should use {2} strategy if Random is between {0} and {1} and none strategy provided in request")
+    @DisplayName("Should use correct strategy based on random number when none strategy is explicitly given")
     void shouldUseRandomStrategyWhenNoneGiven(int low, int high, SimulationStrategyEnum expected) throws Exception {
         when(req.getHeader(STRATEGY_HEADER_NAME)).thenReturn(null);
 
         for (int i = low; i <= high; i++) {
             when(random.nextInt(anyInt())).thenReturn(i);
-            provider.doFilterInternal(req, response, (request, response) -> {
-                assertEquals(expected, provider.get());
-            });
+            provider.doFilterInternal(req, response, (request, response) ->
+                    assertEquals(expected, provider.get()
+                    )
+            );
         }
     }
 
@@ -71,13 +72,14 @@ class SimulationStrategyProviderTest {
 
     @ParameterizedTest
     @EnumSource(value = SimulationStrategyEnum.class)
-    @DisplayName("Should extract {} header from request")
+    @DisplayName("Should extract header from request")
     void validateExtractionFromRequestHeader(SimulationStrategyEnum expected) throws Exception {
         when(req.getHeader(STRATEGY_HEADER_NAME)).thenReturn(expected.name());
 
-        provider.doFilterInternal(req, response, (request, response) -> {
-            assertEquals(expected, provider.get());
-        });
+        provider.doFilterInternal(req, response, (request, response) ->
+                assertEquals(expected, provider.get()
+                )
+        );
 
         verify(response).setHeader(STRATEGY_HEADER_NAME, expected.name());
         assertEquals(NONE, provider.get());
